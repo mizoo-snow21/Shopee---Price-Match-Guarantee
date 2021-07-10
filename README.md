@@ -6,62 +6,73 @@ This is summary and codes.
 # Summary
 ![image](https://user-images.githubusercontent.com/55850618/125023066-0ad16a00-e0b9-11eb-8158-609b93270051.png)
 
-## 1st Stage
-
-
-## 2nd Stage
-
-
-# Model
-## vit_base_patch16_384
-・img_size = 384 x 384  
-・4x TTA  
-
-## efficientnet_b4_ns
+# CNN Model
+## NFNetl0
 ・img_size = 512 x 512  
-・4x TTA  
+・activation = silu→mish   
+・optimizer = ranger  
+・loss = CurricularFace  
 
-## resnest50d_4s2x40d
+## NFNetl1
+・img_size = 512 x 512   
+・activation = silu→mish  
+・optimizer = ranger  
+・loss = CurricularFace  
+
+## Efficientnetb5
+・img_size = 512 x 512    
+・activation = relu→mish   
+・optimizer = ranger  
+・loss = CurricularFace  
+
+## Resnest101e
 ・img_size = 512 x 512  
-・4x TTA  
+・activation = relu→mish  
+・optimizer = ranger  
+・loss = ArcFace  
+・pooling = GeM  
 
 ## Weighted_Averaging
 ・Pulic Score 0.9063  
 ・Private Score 0.9010  
 
-# Some Settings
 ## Augmentaion
 ```
 def get_train_transforms():
-    return Compose([
-            RandomResizedCrop(CFG['img_size'], CFG['img_size']),
-            Transpose(p=0.5),
-            HorizontalFlip(p=0.5),
-            VerticalFlip(p=0.5),
-            ShiftScaleRotate(p=0.5),
-            HueSaturationValue(hue_shift_limit=0.2, sat_shift_limit=0.2, val_shift_limit=0.2, p=0.5),
-            RandomBrightnessContrast(brightness_limit=(-0.1,0.1), contrast_limit=(-0.1, 0.1), p=0.5),
-            Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], max_pixel_value=255.0, p=1.0),
-            CoarseDropout(p=0.5),
-            Cutout(p=0.5),
+    return albumentations.Compose(
+        [   albumentations.Resize(Config.IMG_SIZE,Config.IMG_SIZE,always_apply=True),
+            albumentations.HorizontalFlip(p=0.5),
+            albumentations.VerticalFlip(p=0.5),
+            albumentations.Rotate(limit=120, p=0.8),
+            albumentations.RandomBrightness(limit=(0.09, 0.6), p=0.5),
+            albumentations.Normalize(mean = Config.MEAN, std = Config.STD),
             ToTensorV2(p=1.0),
-        ], p=1.)
-
-def get_valid_transforms():
-    return Compose([
-            CenterCrop(CFG['img_size'], CFG['img_size'], p=1.),
-            Resize(CFG['img_size'], CFG['img_size']),
-            Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], max_pixel_value=255.0, p=1.0),
-            ToTensorV2(p=1.0),
-        ], p=1.)
+        ]
+    
 ```
-## Loss
-TaylorCrossEntropyLoss
 
 ## LR Scheduler
 CosineAnnealingWarmRestarts
 
+# NLP Model
+## Roberta-base
+・input = Indo → English  
+・optimizer = Adam  
+・loss = ArcFace  
+
+## paraphrase-xlm-r-multilingual-v1
+・optimizer = Adam  
+・loss = ArcFace  
+
+## distilbert-base-indonesian
+・input = English → Indo  
+・optimizer = Adam  
+・loss = ArcFace   
+
 # Not Worked
-・Loss function(BiTemperedLogisticLoss/FocalCosineLoss/CrossEntropyLoss)  
-・LRscheduler(GradualWarmupScheduler/OneCycleLR/LambdaLR)  
-・Additional data(2019)  
+・model: Seresnexts、other resnests、other Efficientnets、other NFnets、regnets  
+・loss: AdaCos、Focalloss  
+・activation: relu→mish、silu→mish  
+・optimizer: SGD、adamw  
+・augmentation: Cutout、RandAugment、Autoaugment  
+・other: AMP、 emmbedding concat  
